@@ -1,0 +1,3 @@
+# AI Daily Briefing - Dependencies
+# Core: 仅使用 Python 标准库 + google-auth
+google-auth>=2.20.0
