@@ -428,18 +428,46 @@ def render_html(ja_json: str, articles: list[Article]) -> str:
                 "url": art.url,
             })
 
-    # overview をHTML文字列に変換
-    if isinstance(overview_raw, dict):
-        overview_parts = []
-        labels = {"global": "Global", "china": "China", "medical": "AI×Healthcare", "research": "KOL/Research"}
-        for key, label in labels.items():
-            text = overview_raw.get(key, "特になし")
-            overview_parts.append(f"<b>{label}:</b> {_esc(text)}")
-        overview_html = "<br>".join(overview_parts)
-    elif overview_raw:
-        overview_html = _esc(str(overview_raw))
-    else:
-        overview_html = "本日のAI動向まとめ"
+    # overview を実際のアイテムデータから自動生成（ChatGPTの判定ミスを回避）
+    def _build_overview(items_list):
+        categories = {
+            "Global": [],    # 米国 + 欧州 + グローバル
+            "China": [],     # 中国
+            "AI×Healthcare": [],  # AI×医療 タグ
+            "KOL/Research": [],   # KOL/博客 + 学術系ソース
+        }
+        kol_sources = {"Simon Willison", "Import AI (Jack Clark)", "Ahead of AI (Sebastian Raschka)",
+                      "Interconnects (Nathan Lambert)", "Lilian Weng (OpenAI)", "Chip Huyen",
+                      "Jay Alammar", "Eugene Yan", "Andrej Karpathy", "Fei-Fei Li (Substack)",
+                      "Google Research", "Stanford AI Lab (SAIL)", "World Labs (Fei-Fei Li)"}
+
+        for item in items_list:
+            title = item.get("title", "")[:40]
+            region = item.get("region", "")
+            tag = item.get("tag", "")
+            source = item.get("source", "")
+
+            if tag in ("AI×医療",):
+                categories["AI×Healthcare"].append(title)
+            if region == "中国":
+                categories["China"].append(title)
+            elif region in ("米国", "欧州", "グローバル"):
+                categories["Global"].append(title)
+            if source in kol_sources:
+                categories["KOL/Research"].append(title)
+
+        parts = []
+        for label, titles in categories.items():
+            if titles:
+                summary = "、".join(titles[:3])
+                if len(titles) > 3:
+                    summary += f" 他{len(titles)-3}件"
+                parts.append(f"<b>{label}:</b> {_esc(summary)}")
+            else:
+                parts.append(f"<b>{label}:</b> 特になし")
+        return "<br>".join(parts)
+
+    overview_html = _build_overview(items)
 
     TAG_CLASSES = {
         "AI研究": "tag-research", "製品リリース": "tag-product",
