@@ -610,14 +610,7 @@ def analyze(articles: list[Article]) -> tuple[list[Article], str, str]:
     briefing = generate_briefing(filtered)
     print(f"[Analyzer] 中文简报完成 ({len(briefing)} 字符)")
 
-    # 4. 生成日本語HTMLブリーフィング
-    print("[Analyzer] 日本語HTMLブリーフィング生成中...")
-    ja_json = generate_briefing_ja(filtered)
+    # 4. 日本語版は一時停止中（コスト削減）
     html = ""
-    if ja_json:
-        html = render_html(ja_json, filtered)
-        print(f"[Analyzer] 日本語HTML完成 ({len(html)} 字符)")
-    else:
-        print("[Analyzer] 日本語版生成失敗、スキップ")
 
     return filtered, briefing, html
